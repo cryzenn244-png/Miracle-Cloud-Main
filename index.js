@@ -67,7 +67,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
   }
 
   if (interaction.commandName === "panel") {
-    const panelUrl = process.env.PANEL_URL;
+    const panelUrl = process.env.https://substance-only-sees-robert.trycloudflare.com;
 
     const embed = new EmbedBuilder()
       .setColor(0x5865F2)
