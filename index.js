@@ -11,9 +11,12 @@ const {
 
 const TOKEN = process.env.MTU3MDM3NjI2NDQ5MTk5NTE0Nw.GSbUuz.Oz5Y0bZw9WbCBNCDRTTfxZ9LxePMnKz_SZaoQk;
 const CLIENT_ID = process.env.1570376264491995147;
+const PANEL_URL = process.env.https://substance-only-sees-robert.trycloudflare.com/;
 
 if (!TOKEN || !CLIENT_ID) {
-  throw new Error("Missing DISCORD_TOKEN or CLIENT_ID environment variables.");
+  throw new Error(
+    "Missing DISCORD_TOKEN or CLIENT_ID environment variables."
+  );
 }
 
 const client = new Client({
@@ -27,64 +30,90 @@ const commands = [
 
   new SlashCommandBuilder()
     .setName("panel")
-    .setDescription("Get the Miracle Nodes hosting panel information")
+    .setDescription("View the Miracle Nodes hosting panel")
 ].map(command => command.toJSON());
 
-const rest = new REST({ version: "10" }).setToken(TOKEN);
+async function registerCommands() {
+  const rest = new REST({ version: "10" }).setToken(TOKEN);
 
-client.once(Events.ClientReady, async (bot) => {
+  await rest.put(
+    Routes.applicationCommands(CLIENT_ID),
+    { body: commands }
+  );
+
+  console.log("✅ Slash commands registered.");
+}
+
+client.once(Events.ClientReady, async bot => {
   console.log(`✅ ${bot.user.tag} is online!`);
 
   try {
-    await rest.put(
-      Routes.applicationCommands(CLIENT_ID),
-      { body: commands }
-    );
-
-    console.log("✅ Slash commands registered successfully.");
+    await registerCommands();
   } catch (error) {
-    console.error("❌ Command registration failed:", error);
+    console.error("Command registration failed:", error.message);
   }
 });
 
-client.on(Events.InteractionCreate, async (interaction) => {
+client.on(Events.InteractionCreate, async interaction => {
   if (!interaction.isChatInputCommand()) return;
 
-  if (interaction.commandName === "miraclenodes") {
-    const embed = new EmbedBuilder()
-      .setColor(0x5865F2)
-      .setTitle("✨ Miracle Nodes")
-      .setDescription(
-        "Welcome to **Miracle Nodes**!\n\n" +
-        "🚀 Your hosting journey starts here.\n" +
-        "💻 Built for Minecraft servers, Discord bots, and more.\n\n" +
-        "🤖 This Discord bot is proudly created by **Miracle Nodes**."
-      )
-      .setFooter({ text: "Miracle Nodes • Hosting Made Simple" })
-      .setTimestamp();
+  try {
+    if (interaction.commandName === "miraclenodes") {
+      const embed = new EmbedBuilder()
+        .setColor(0x7C3AED)
+        .setTitle("✨ Welcome to Miracle Nodes")
+        .setDescription(
+          "Your hosting journey starts here!\n\n" +
+          "🚀 Hosting solutions for your projects.\n" +
+          "🎮 Minecraft server hosting.\n" +
+          "🤖 Discord bot hosting.\n\n" +
+          "This bot is proudly created by **Miracle Nodes**."
+        )
+        .setFooter({
+          text: "Miracle Nodes • Hosting Made Simple"
+        })
+        .setTimestamp();
 
-    return interaction.reply({ embeds: [embed] });
+      return interaction.reply({ embeds: [embed] });
+    }
+
+    if (interaction.commandName === "panel") {
+      const embed = new EmbedBuilder()
+        .setColor(0x7C3AED)
+        .setTitle("🖥️ Miracle Nodes Panel")
+        .setDescription(
+          PANEL_URL
+            ? `Manage your hosting services below.\n\n[Open Hosting Panel](${PANEL_URL})`
+            : "The hosting panel link has not been configured yet."
+        )
+        .setFooter({
+          text: "Miracle Nodes • Control Panel"
+        })
+        .setTimestamp();
+
+      return interaction.reply({ embeds: [embed] });
+    }
+  } catch (error) {
+    console.error("Interaction error:", error);
+
+    const message = {
+      content: "❌ Something went wrong. Please try again.",
+      ephemeral: true
+    };
+
+    if (interaction.deferred || interaction.replied) {
+      await interaction.followUp(message).catch(() => {});
+    } else {
+      await interaction.reply(message).catch(() => {});
+    }
   }
+});
 
-  if (interaction.commandName === "panel") {
-    const panelUrl = process.env.https://substance-only-sees-robert.trycloudflare.com;
-
-    const embed = new EmbedBuilder()
-      .setColor(0x5865F2)
-      .setTitle("🖥️ Miracle Nodes Panel")
-      .setDescription(
-        panelUrl
-          ? `Manage your hosting services through the panel below.\n\n🔗 [Open Hosting Panel](${panelUrl})`
-          : "Manage your hosting services through the official Miracle Nodes panel."
-      )
-      .setFooter({ text: "Miracle Nodes • Control Panel" })
-      .setTimestamp();
-
-    return interaction.reply({ embeds: [embed] });
-  }
+client.on(Events.Error, error => {
+  console.error("Discord client error:", error);
 });
 
 client.login(TOKEN).catch(error => {
-  console.error("❌ Discord login failed:", error);
+  console.error("Discord login failed:", error.message);
   process.exitCode = 1;
 });
